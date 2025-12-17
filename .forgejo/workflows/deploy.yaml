@@ -1,0 +1,39 @@
+name: Deploy to Nexus Vector
+
+on:
+  push:
+    branches:
+      - master
+      - main
+
+jobs:
+  deploy:
+    runs-on: docker
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add Host Key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p 2222 -H nexus-vector >> ~/.ssh/known_hosts
+          ssh-keyscan -p 2222 -H git.runfoo.run >> ~/.ssh/known_hosts
+          # Fallback for direct IP or alias if runner is local
+          echo "Host nexus-vector" >> ~/.ssh/config
+          echo "  HostName nexus-vector" >> ~/.ssh/config
+          echo "  Port 2222" >> ~/.ssh/config
+          echo "  User admin" >> ~/.ssh/config
+          echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+
+      - name: Deploy Monorepo via Rsync
+        run: |
+          rsync -avz -e "ssh -p 2222" --exclude '.git' --exclude 'node_modules' --exclude 'apps/web/node_modules' --exclude '.next' ./ admin@nexus-vector:/srv/containers/kites/
+
+      - name: Restart Kites Service
+        run: |
+          ssh -p 2222 admin@nexus-vector "cd /srv/containers/kites && docker compose up -d --build kites"

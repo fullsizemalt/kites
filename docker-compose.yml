@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  kites:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/kites_db?schema=public
+      NEXTAUTH_URL: https://kites.runfoo.run
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-changeme1234567890changeme}
+      KITES_API_KEY: kites-desktop-secret-key
+      # If using Google/GitHub auth, add those here too
+    depends_on:
+      - db
+    networks:
+      - kites-network
+      - traefik-public
+    deploy:
+      restart_policy:
+        condition: on-failure
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      - "traefik.http.routers.kites.rule=Host(`kites.runfoo.run`)"
+      - "traefik.http.routers.kites.entrypoints=websecure"
+      - "traefik.http.routers.kites.tls.certresolver=letsencrypt"
+      - "traefik.http.services.kites.loadbalancer.server.port=3000"
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: kites_db
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - kites-network
+    restart: unless-stopped
+
+networks:
+  kites-network:
+    driver: bridge
+  traefik-public:
+    external: true
+
+volumes:
+  db_data:
