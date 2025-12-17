@@ -12,10 +12,16 @@ export function Navbar() {
                     </Link>
                     <nav className="flex items-center gap-4 text-sm font-medium text-muted-foreground">
                         <Link href="/" className="hover:text-foreground transition-colors">
-                            Pastes
+                            Home
+                        </Link>
+                        <Link href="/dashboard" className="hover:text-foreground transition-colors">
+                            Dashboard
                         </Link>
                         <Link href="/sessions" className="hover:text-foreground transition-colors">
                             Sessions
+                        </Link>
+                        <Link href="/settings/api-keys" className="hover:text-foreground transition-colors">
+                            Settings
                         </Link>
                     </nav>
                 </div>

@@ -21,6 +21,15 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const session = await auth();
+        
+        // API Key Auth for Desktop Client
+        const apiKey = req.headers.get('x-api-key');
+        const isApiAuth = apiKey && apiKey === process.env.KITES_API_KEY;
+
+        if (!session && !isApiAuth) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const validated = createPasteSchema.parse(body);
 
         const id = nanoid(10);
@@ -51,7 +60,7 @@ export async function POST(req: NextRequest) {
                 let tagId = nanoid(8);
 
                 // Check if tag exists
-                const existingTag = await db.select().from(tags).where(eq(tags.name, tagName)).get();
+                const existingTag = (await db.select().from(tags).where(eq(tags.name, tagName)).limit(1))[0];
 
                 if (existingTag) {
                     tagId = existingTag.id;
@@ -66,7 +75,7 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        const created = await db.select().from(pastes).where(eq(pastes.id, id)).get();
+        const created = (await db.select().from(pastes).where(eq(pastes.id, id)).limit(1))[0];
 
         return NextResponse.json(created, { status: 201 });
     } catch (error) {
@@ -99,8 +108,7 @@ export async function GET(req: NextRequest) {
         .where(and(...conditions))
         .orderBy(desc(pastes.createdAt))
         .limit(limit)
-        .offset(offset)
-        .all();
+        .offset(offset);
 
     return NextResponse.json(results);
 }

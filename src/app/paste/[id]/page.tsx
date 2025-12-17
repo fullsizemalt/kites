@@ -18,7 +18,7 @@ function SimpleBadge({ children, className }: { children: React.ReactNode, class
 
 export default async function PastePage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const paste = await db.select().from(pastes).where(eq(pastes.id, id)).get();
+    const paste = (await db.select().from(pastes).where(eq(pastes.id, id)).limit(1))[0];
 
     if (!paste) {
         notFound();
@@ -30,8 +30,7 @@ export default async function PastePage({ params }: { params: Promise<{ id: stri
     })
         .from(tags)
         .innerJoin(pastesToTags, eq(tags.id, pastesToTags.tagId))
-        .where(eq(pastesToTags.pasteId, paste.id))
-        .all();
+        .where(eq(pastesToTags.pasteId, id));
 
     return (
         <div className="space-y-6">

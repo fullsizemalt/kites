@@ -1,10 +1,10 @@
-import { sqliteTable, text, integer, index, primaryKey } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, integer, timestamp, primaryKey, index, boolean } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import type { AdapterAccount } from "next-auth/adapters";
 
 // --- Application Tables ---
 
-export const pastes = sqliteTable('pastes', {
+export const pastes = pgTable('pastes', {
   id: text('id').primaryKey(), // Nanoid
   title: text('title'),
   content: text('content').notNull(),
@@ -12,46 +12,47 @@ export const pastes = sqliteTable('pastes', {
   syntax: text('syntax'),
   visibility: text('visibility').default('public'), // 'public', 'unlisted', 'private'
   authorId: text('author_id').references(() => users.id, { onDelete: 'set null' }), // Linked to User
-  sessionId: text('session_id'), // Linked to Agent Session (logical)
-  expiresAt: integer('expires_at', { mode: 'timestamp' }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
+  sessionId: text('session_id').references(() => agentSessions.id, { onDelete: 'set null' }),
+  expiresAt: timestamp('expires_at'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
 });
 
-export const tags = sqliteTable('tags', {
+export const tags = pgTable('tags', {
   id: text('id').primaryKey(),
   name: text('name').notNull().unique(),
   color: text('color'),
   description: text('description'),
 });
 
-export const pastesToTags = sqliteTable('pastes_to_tags', {
+export const pastesToTags = pgTable('pastes_to_tags', {
   pasteId: text('paste_id').references(() => pastes.id, { onDelete: 'cascade' }),
   tagId: text('tag_id').references(() => tags.id, { onDelete: 'cascade' }),
 }, (t) => ({
-  pk: index('pk').on(t.pasteId, t.tagId),
+  pk: primaryKey({ columns: [t.pasteId, t.tagId] }),
 }));
 
-// Renamed from 'sessions' to 'agent_sessions' to avoid conflict with Auth.js
-export const agentSessions = sqliteTable('agent_sessions', {
+export const agentSessions = pgTable('agent_sessions', {
   id: text('id').primaryKey(),
   title: text('title'),
   agentName: text('agent_name'),
   userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }), // Optional owner
-  createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
+  createdAt: timestamp('created_at').defaultNow(),
 });
 
 // --- Auth.js Tables ---
 
-export const users = sqliteTable("user", {
-  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+export const users = pgTable("user", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   name: text("name"),
   email: text("email").notNull(),
-  emailVerified: integer("emailVerified", { mode: "timestamp_ms" }),
+  emailVerified: timestamp("emailVerified", { mode: "date" }),
   image: text("image"),
 });
 
-export const accounts = sqliteTable(
+export const accounts = pgTable(
   "account",
   {
     userId: text("userId")
@@ -75,20 +76,20 @@ export const accounts = sqliteTable(
   })
 );
 
-export const sessions = sqliteTable("session", {
+export const sessions = pgTable("session", {
   sessionToken: text("sessionToken").primaryKey(),
   userId: text("userId")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  expires: integer("expires", { mode: "timestamp_ms" }).notNull(),
+  expires: timestamp("expires", { mode: "date" }).notNull(),
 });
 
-export const verificationTokens = sqliteTable(
+export const verificationTokens = pgTable(
   "verificationToken",
   {
     identifier: text("identifier").notNull(),
     token: text("token").notNull(),
-    expires: integer("expires", { mode: "timestamp_ms" }).notNull(),
+    expires: timestamp("expires", { mode: "date" }).notNull(),
   },
   (verificationToken) => ({
     compositePk: primaryKey({
@@ -97,7 +98,7 @@ export const verificationTokens = sqliteTable(
   })
 );
 
-export const authenticators = sqliteTable(
+export const authenticators = pgTable(
   "authenticator",
   {
     credentialID: text("credentialID").notNull().unique(),
@@ -108,7 +109,7 @@ export const authenticators = sqliteTable(
     credentialPublicKey: text("credentialPublicKey").notNull(),
     counter: integer("counter").notNull(),
     credentialDeviceType: text("credentialDeviceType").notNull(),
-    credentialBackedUp: integer("credentialBackedUp").notNull(),
+    credentialBackedUp: boolean("credentialBackedUp").notNull(),
     transports: text("transports"),
   },
   (authenticator) => ({

@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
             userId: session?.user?.id,
         });
 
-        const created = await db.select().from(agentSessions).where(eq(agentSessions.id, id)).get(); // Re-fetch to get default fields if any
+        const created = (await db.select().from(agentSessions).where(eq(agentSessions.id, id)).limit(1))[0]; // Re-fetch to get default fields if any
 
         // Since we inserted, we can just return what we have + id if we trust it, but fetching is safer for timestamps
         // Actually better-sqlite3 insert doesn't return the row by default unless using returning() which is supported in Drizzle now
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
         // Let's refactor to use returning() for cleaner code in next iteration or just re-fetch.
         // Re-fetching is fine.
 
-        return NextResponse.json({ id, ...validated }, { status: 201 });
+        return NextResponse.json(created || { id, ...validated }, { status: 201 });
     } catch (error) {
         if (error instanceof ZodError) {
             return NextResponse.json({ error: (error as any).errors }, { status: 400 });

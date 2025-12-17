@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default async function TagPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const tag = await db.select().from(tags).where(eq(tags.id, id)).get();
+    const tag = (await db.select().from(tags).where(eq(tags.id, id)).limit(1))[0];
 
     if (!tag) {
         notFound();
@@ -26,7 +26,7 @@ export default async function TagPage({ params }: { params: Promise<{ id: string
         .innerJoin(pastesToTags, eq(pastes.id, pastesToTags.pasteId))
         .where(eq(pastesToTags.tagId, tag.id))
         .orderBy(desc(pastes.createdAt))
-        .all();
+    .limit(50);
 
     return (
         <div className="space-y-6">

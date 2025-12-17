@@ -3,7 +3,7 @@ version: '3.8'
 services:
   kites:
     build:
-      context: ./apps/web
+      context: .
       dockerfile: Dockerfile
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/kites_db?schema=public

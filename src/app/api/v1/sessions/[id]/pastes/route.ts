@@ -9,8 +9,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const results = await db.select()
         .from(pastes)
         .where(eq(pastes.sessionId, sessionId))
-        .orderBy(desc(pastes.createdAt))
-        .all();
+        .orderBy(desc(pastes.createdAt));
 
     return NextResponse.json(results);
 }

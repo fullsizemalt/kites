@@ -18,8 +18,7 @@ export default async function SessionsPage() {
         .from(agentSessions)
         .leftJoin(pastes, eq(agentSessions.id, pastes.sessionId))
         .groupBy(agentSessions.id)
-        .orderBy(desc(agentSessions.createdAt))
-        .all();
+        .orderBy(desc(agentSessions.createdAt));
 
     return (
         <div className="space-y-6">

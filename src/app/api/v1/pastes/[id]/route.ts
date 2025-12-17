@@ -9,7 +9,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const { searchParams } = new URL(req.url);
     const raw = searchParams.get('raw') === '1';
 
-    const paste = await db.select().from(pastes).where(eq(pastes.id, id)).get();
+    const paste = (await db.select().from(pastes).where(eq(pastes.id, id)).limit(1))[0];
 
     if (!paste) {
         return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -45,14 +45,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
                 updatedAt: new Date(),
             })
             .where(eq(pastes.id, id))
-            .returning()
-            .get();
+            .returning();
+        
+        const updatedFirst = updated[0];
 
-        if (!updated) {
+        if (!updatedFirst) {
             return NextResponse.json({ error: 'Not found' }, { status: 404 });
         }
 
-        return NextResponse.json(updated);
+        return NextResponse.json(updatedFirst);
     } catch (error) {
         if (error instanceof ZodError) {
             return NextResponse.json({ error: (error as any).errors }, { status: 400 });
@@ -63,6 +64,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    await db.delete(pastes).where(eq(pastes.id, id)).run();
+    await db.delete(pastes).where(eq(pastes.id, id));
     return new NextResponse(null, { status: 204 });
 }

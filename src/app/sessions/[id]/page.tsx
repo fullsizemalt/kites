@@ -7,7 +7,7 @@ import { formatDistanceToNow } from "date-fns";
 
 export default async function SessionPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const session = await db.select().from(agentSessions).where(eq(agentSessions.id, id)).get();
+    const session = (await db.select().from(agentSessions).where(eq(agentSessions.id, id)).limit(1))[0];
 
     if (!session) {
         notFound();
@@ -16,8 +16,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
     const sessionPastes = await db.select()
         .from(pastes)
         .where(eq(pastes.sessionId, session.id))
-        .orderBy(desc(pastes.createdAt))
-        .all();
+        .orderBy(desc(pastes.createdAt));
 
     return (
         <div className="space-y-6">
