@@ -83,28 +83,60 @@ CREATE TABLE IF NOT EXISTS "verificationToken" (
 	CONSTRAINT "verificationToken_identifier_token_pk" PRIMARY KEY("identifier", "token")
 );
 --> statement-breakpoint
+DO $$ BEGIN
 ALTER TABLE "account"
 ADD CONSTRAINT "account_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+WHEN duplicate_object THEN null;
+END $$;
 --> statement-breakpoint
+DO $$ BEGIN
 ALTER TABLE "agent_sessions"
 ADD CONSTRAINT "agent_sessions_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+WHEN duplicate_object THEN null;
+END $$;
 --> statement-breakpoint
+DO $$ BEGIN
 ALTER TABLE "authenticator"
 ADD CONSTRAINT "authenticator_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+WHEN duplicate_object THEN null;
+END $$;
 --> statement-breakpoint
+DO $$ BEGIN
 ALTER TABLE "pastes"
 ADD CONSTRAINT "pastes_author_id_user_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."user"("id") ON DELETE
 set null ON UPDATE no action;
+EXCEPTION
+WHEN duplicate_object THEN null;
+END $$;
 --> statement-breakpoint
+DO $$ BEGIN
 ALTER TABLE "pastes"
 ADD CONSTRAINT "pastes_session_id_agent_sessions_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."agent_sessions"("id") ON DELETE
 set null ON UPDATE no action;
+EXCEPTION
+WHEN duplicate_object THEN null;
+END $$;
 --> statement-breakpoint
+DO $$ BEGIN
 ALTER TABLE "pastes_to_tags"
 ADD CONSTRAINT "pastes_to_tags_paste_id_pastes_id_fk" FOREIGN KEY ("paste_id") REFERENCES "public"."pastes"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+WHEN duplicate_object THEN null;
+END $$;
 --> statement-breakpoint
+DO $$ BEGIN
 ALTER TABLE "pastes_to_tags"
 ADD CONSTRAINT "pastes_to_tags_tag_id_tags_id_fk" FOREIGN KEY ("tag_id") REFERENCES "public"."tags"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+WHEN duplicate_object THEN null;
+END $$;
 --> statement-breakpoint
+DO $$ BEGIN
 ALTER TABLE "session"
 ADD CONSTRAINT "session_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+WHEN duplicate_object THEN null;
+END $$;
